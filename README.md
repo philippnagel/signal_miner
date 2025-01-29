@@ -178,7 +178,7 @@ That’s the **overall usage flow** of **Signal Miner**. For the most up-to-date
 
 Below is a scatter plot, which illustrates the relationship between **past performance** (cross-validation / in-sample Sharpe) and **future performance** (test fold or out-of-sample Sharpe):
 
-![performance_scatter](https://github.com/user-attachments/assets/d7bf30b7-8fab-45bf-a90a-38fc679f31e6)
+<img width="883" alt="sharpe_scatter" src="https://github.com/user-attachments/assets/514da2e4-3630-475d-80b6-cb7d1776690a" />
 
 
 > **Key Takeaway**: The best model on historical (validation) data is **not necessarily** the best model for unseen data. There’s inherent randomness in the modeling process, and no amount of backtesting can completely guarantee out-of-sample success.
