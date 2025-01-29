@@ -1,5 +1,4 @@
-
-<img width="400" alt="signal_miner" src="https://github.com/user-attachments/assets/3c56990c-6600-4134-82de-379e24a7db9b" />
+<img width="300" alt="snake_miner" src="https://github.com/user-attachments/assets/435ae4bc-762f-4028-9370-6746ce610e65" />
 
 # Signal Miner
 
@@ -13,12 +12,9 @@ This repository houses code and notebooks to **mine** (or systematically search 
 1. [Background](#background)
 2. [Installation & Setup](#installation--setup)
 3. [Usage Overview](#usage-overview)
-4. [Key Functions](#key-functions)
-5. [Exporting Models](#exporting-models)
-6. [Notebook Demo](#notebook-demo)
-7. [Performance Plot & Randomness](#performance-plot--randomness)
-8. [Contributing](#contributing)
-9. [License](#license)
+4. [Performance Plot & Randomness](#performance-plot--randomness)
+5. [Contributing](#contributing)
+6. [License](#license)
 
 ---
 
@@ -126,7 +122,7 @@ all_splits = list(TimeSeriesSplit(n_splits=ns, max_train_size=100_000_000, gap=1
 ```
 Here, we use two folds. The first fold acts as “validation” and the second as a “test” set, ensuring no overlap.
 
-*(Optional)*: You could visualize these folds against your era/time index to confirm they’re disjoint.
+![output](https://github.com/user-attachments/assets/d12e2f2d-f8da-4f2e-9e50-b03d413e2161)
 
 **4. Launch the mining process** (asynchronous job pool) to train multiple configurations:
 ```python
