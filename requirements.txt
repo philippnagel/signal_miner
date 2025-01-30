@@ -1,10 +1,7 @@
 pandas
 numpy
-random
 numerapi
 lightgbm
 pickle-mixin
-os
-multiprocessing
 scikit-learn
 matplotlib
