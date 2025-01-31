@@ -196,6 +196,50 @@ Some observations:
 
 This dynamic mirrors the transition from **training** to **live deployment**: even the best backtested model might not be the best performer going forward. But a solid positive correlation provides some confidence that better in-sample results can lead to better out-of-sample performance.
 
+## Hardware & Resource Considerations  
+
+This project was developed using **Python 3.10** on **Ubuntu Linux** running on an **AMD chipset** with **128 GB of RAM**.  
+
+### Swap Space: The Secret to Avoiding Memory Errors  
+
+One of the **most crucial** optimizations for running large-scale model mining is **ensuring you have enough swap space**. By default, Linux systems often allocate **far too little swap**, leading to **memory errors** when working with large datasets.  
+
+**Recommendation:** Set your **swap space** to **2X your RAM**.  
+
+In my case, that meant **expanding swap to 256 GB**—a full **1/4 of my 1 TB hard drive**!  
+Since making this change, **99.99% of my memory errors have disappeared**.  
+
+#### Linux Makes This Easy  
+Ubuntu allows full control over **swap size**, unlike macOS (which doesn’t let you modify it) or Windows (which, well, let’s not even talk about Windows).  
+
+### Expanding Swap on Ubuntu  
+
+Run the following commands to **increase swap space** to any desired size (example: **256 GB**).  
+
+```
+# Step 1: Turn off existing swap  
+sudo swapoff -a  
+
+# Step 2: Create a new swap file of desired size (256 GB in this case)  
+sudo fallocate -l 256G /swapfile  
+
+# Step 3: Set proper permissions  
+sudo chmod 600 /swapfile  
+
+# Step 4: Format the swap space  
+sudo mkswap /swapfile  
+
+# Step 5: Enable swap  
+sudo swapon /swapfile  
+
+# Step 6: Make it permanent (add this line to /etc/fstab)  
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab  
+
+# Verify that swap is active  
+swapon --show
+```
+
+
 ## Contributing
 
 We welcome contributions! Whether it’s:
