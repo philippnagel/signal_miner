@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import random
 import lightgbm as lgb
+import sqlite3
 
 # Randomized parameter grid
 def get_ran_cfg(param_dict):
@@ -28,7 +29,7 @@ def get_model(cfg):
     )
     return model
 
-def evaluate_completed_configs(data, configurations, mmapped_array, done_splits, all_splits, ns, label='target'):
+def evaluate_completed_configs(data, configurations, mmapped_array, done_splits, all_splits, ns, label='target', db_path="database.db"):
     """
     Evaluate completed configurations and return a DataFrame with evaluation metrics.
 
@@ -40,6 +41,7 @@ def evaluate_completed_configs(data, configurations, mmapped_array, done_splits,
         all_splits (list): List of validation-test split indices.
         ns (int): Number of splits per configuration.
         label (str): Target column name.
+        db_path (str): Path to the SQLite database.
 
     Returns:
         pd.DataFrame: DataFrame with evaluation metrics for completed configurations.
@@ -113,6 +115,19 @@ def evaluate_completed_configs(data, configurations, mmapped_array, done_splits,
         'whole_corr', 'whole_shp', 'whole_max_dd'
     ]
 
+    # Store results in the database
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    
+    for idx, row in config_df.iterrows():
+        cursor.execute('''
+        INSERT INTO models (configuration, validation_corr, validation_shp, validation_max_dd, test_corr, test_shp, test_max_dd, whole_corr, whole_shp, whole_max_dd, is_benchmark)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (str(configurations[idx]), row['validation_corr'], row['validation_shp'], row['validation_max_dd'], row['test_corr'], row['test_shp'], row['test_max_dd'], row['whole_corr'], row['whole_shp'], row['whole_max_dd'], idx == 0))
+    
+    conn.commit()
+    conn.close()
+    
     return config_df.sort_values('validation_shp').dropna()
 
 def compare_to_benchmark(res_df, benchmark_id=0):
@@ -139,7 +154,7 @@ def compare_to_benchmark(res_df, benchmark_id=0):
 
     return outperforming_configs
 
-def evaluate_and_ensemble(ensemble, configurations, mmapped_array, data, all_splits, feature_cols, get_model, save_name="model"):
+def evaluate_and_ensemble(ensemble, configurations, mmapped_array, data, all_splits, feature_cols, get_model, save_name="model", db_path="database.db"):
     """
     Compare configurations to the benchmark, select the best, retrain it on all data,
     and package it into a predict function for deployment.
@@ -153,6 +168,7 @@ def evaluate_and_ensemble(ensemble, configurations, mmapped_array, data, all_spl
         feature_cols (list): List of feature column names.
         get_model (function): Function to initialize the model based on configuration.
         save_name (str): Name to use for saving the pickle file.
+        db_path (str): Path to the SQLite database.
 
     Returns:
         None
@@ -181,6 +197,9 @@ def evaluate_and_ensemble(ensemble, configurations, mmapped_array, data, all_spl
 
     # Step 4: Retrain the ensemble on all data
     models = []
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    
     for k in ensemble:
         cfg = configurations[k]
         label = cfg['target']
@@ -193,6 +212,15 @@ def evaluate_and_ensemble(ensemble, configurations, mmapped_array, data, all_spl
         )
 
         models.append(model)
+        
+        # Insert model details into the database
+        cursor.execute('''
+        INSERT INTO models (configuration, validation_corr, validation_shp, validation_max_dd, test_corr, test_shp, test_max_dd, whole_corr, whole_shp, whole_max_dd, is_benchmark)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (str(cfg), None, None, None, None, None, None, None, None, None, False))
+    
+    conn.commit()
+    conn.close()
 
     # Step 5: Define the predict function
     def predict(live_features: pd.DataFrame, live_benchmark_models: pd.DataFrame) -> pd.DataFrame:
@@ -212,3 +240,39 @@ def evaluate_and_ensemble(ensemble, configurations, mmapped_array, data, all_spl
         f.write(p)
 
     print(f"Predict function saved as predict_{save_name}_full.pkl")
+
+def initialize_database(db_path="database.db"):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    
+    # Create table for models
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS models (
+        id INTEGER PRIMARY KEY,
+        configuration TEXT,
+        validation_corr REAL,
+        validation_shp REAL,
+        validation_max_dd REAL,
+        test_corr REAL,
+        test_shp REAL,
+        test_max_dd REAL,
+        whole_corr REAL,
+        whole_shp REAL,
+        whole_max_dd REAL,
+        is_benchmark BOOLEAN
+    )
+    ''')
+    
+    # Create table for benchmark results
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS benchmark_results (
+        id INTEGER PRIMARY KEY,
+        model_id INTEGER,
+        metric TEXT,
+        value REAL,
+        FOREIGN KEY(model_id) REFERENCES models(id)
+    )
+    ''')
+    
+    conn.commit()
+    conn.close()

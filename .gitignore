@@ -1,0 +1,6 @@
+.aider*
+.env
+database.db
+__pycache__/
+.ipynb_checkpoints
+v5.0/
